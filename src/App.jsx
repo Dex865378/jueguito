@@ -1,6 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 // eslint-disable-next-line no-unused-vars
-import { motion, AnimatePresence } from 'framer-motion';
+// framer-motion removed for stability
+const motion = {
+  div: ({ children, className, style, ...props }) => <div className={className} style={style} {...props}>{children}</div>,
+  button: ({ children, className, style, ...props }) => <button className={className} style={style} {...props}>{children}</button>,
+  h2: ({ children, className, style, ...props }) => <h2 className={className} style={style} {...props}>{children}</h2>,
+  span: ({ children, className, style, ...props }) => <span className={className} style={style} {...props}>{children}</span>,
+  section: ({ children, className, style, ...props }) => <section className={className} style={style} {...props}>{children}</section>,
+  p: ({ children, className, style, ...props }) => <p className={className} style={style} {...props}>{children}</p>,
+  header: ({ children, className, style, ...props }) => <header className={className} style={style} {...props}>{children}</header>,
+  main: ({ children, className, style, ...props }) => <main className={className} style={style} {...props}>{children}</main>
+};
+const AnimatePresence = ({ children }) => <>{children}</>;
 import confetti from 'canvas-confetti';
 import { 
   Brain, Lock, Unlock, Trophy, ChevronRight, Zap, 
@@ -251,11 +262,10 @@ const MemoryGame = ({ config, onSolve, onError }) => {
     <div className="flex flex-col items-center gap-8">
       <div className="grid grid-cols-2 gap-4">
         {config.colors.map((color, i) => (
-          <motion.button
+          <button
             key={i}
-            whileTap={{ scale: 0.9 }}
             onClick={() => handleBtnClick(i)}
-            className="w-20 h-20 rounded-2xl border border-white/10 transition-all shadow-lg"
+            className="w-20 h-20 rounded-2xl border border-white/10 transition-all shadow-lg active:scale-90"
             style={{ 
               backgroundColor: activeBtn === i ? color : `${color}11`,
               borderColor: activeBtn === i ? '#fff' : `${color}33`,
@@ -509,9 +519,9 @@ const SyncGame = ({ config, onSolve, onError }) => {
         </svg>
 
         {/* Pointer */}
-        <motion.div 
+        <div 
           className="absolute w-1 h-32 bg-indigo-500 origin-bottom bottom-1/2 shadow-[0_0_15px_#6366f1]"
-          style={{ rotate: rotation }}
+          style={{ transform: `rotate(${rotation}deg)` }}
         />
 
         {/* Center Node */}
@@ -998,9 +1008,9 @@ const OrbitalGame = ({ config, onSolve, onError }) => {
           const colors = ['#6366f1', '#a855f7', '#ec4899'];
           return (
             <div key={i} className="absolute rounded-full border border-white/10" style={{ width: size, height: size }}>
-              <motion.div 
+              <div 
                 className="absolute left-1/2 top-0 w-4 h-4 -ml-2 -mt-2 rounded-full bg-current"
-                style={{ rotate: rot, transformOrigin: `50% ${size / 2}px`, color: colors[i], boxShadow: `0 0 15px ${colors[i]}` }}
+                style={{ transform: `rotate(${rot}deg)`, transformOrigin: `50% ${size / 2}px`, color: colors[i], boxShadow: `0 0 15px ${colors[i]}` }}
               />
             </div>
           );
@@ -1079,7 +1089,7 @@ const MatrixRotationGame = ({ config, onSolve }) => {
           onClick={() => rotate(i)}
           className="w-24 h-24 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center transition-all hover:bg-white/10"
         >
-          <motion.div animate={{ rotate: rot }} className="w-12 h-12 border-t-4 border-indigo-500 rounded-full" />
+          <div className="w-12 h-12 border-t-4 border-indigo-500 rounded-full" style={{ transform: `rotate(${rot}deg)`, transition: 'transform 0.3s ease' }} />
         </button>
       ))}
     </div>
