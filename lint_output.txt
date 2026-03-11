@@ -1,0 +1,22 @@
+﻿
+C:\Users\Dex\.gemini\antigravity\scratch\enigma-nexus\src\App.jsx
+  1071:8  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+  1073:8  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+C:\Users\Dex\.gemini\antigravity\scratch\enigma-nexus\src\FunGames.jsx
+  167:27  error    Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  165 |   const play = (pIdx) => {
+  166 |     playSound('click');
+> 167 |     const ai = Math.floor(Math.random() * 3);
+      |                           ^^^^^^^^^^^^^ Cannot call impure function
+  168 |     setAiChoice(ai);
+  169 |     if (pIdx === ai) return; // draw
+  170 |     if ((pIdx + 1) % 3 === ai) { setWins(0); onError(); }  react-hooks/purity
+  464:3   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+
+✖ 4 problems (1 error, 3 warnings)
+  0 errors and 3 warnings potentially fixable with the `--fix` option.
+
