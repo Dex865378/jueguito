@@ -290,7 +290,55 @@ export const PUZZLES = [
   { id: 67, type: 'word_scramble', category: 'recreational', title: 'Crypto Scramble', description: 'Descifra esta palabra desordenada. Pista: Es un tipo de clave.', difficulty: 'Fácil', points: 120, config: { word: 'TOKEN' } },
   { id: 68, type: 'typing_race', category: 'recreational', title: 'Input Rápido', description: 'Teclea "CYBER" con precisión absoluta.', difficulty: 'Fácil', points: 100, config: { word: 'CYBER' } },
   { id: 69, type: 'emoji_pairs', category: 'recreational', title: 'Memoria Dual', description: 'Un nuevo set de pares para memorizar. ¡Más difícil!', difficulty: 'Medio', points: 200, config: { emojis: ['🎮','🕹️','💾','📡','🔐','🌐'] } },
-  { id: 70, type: 'trivia', category: 'recreational', title: 'Nerd Check', description: '¿Cuántos bits tiene un byte?', difficulty: 'Muy Fácil', points: 80, config: { question: '¿Cuántos bits tiene un byte?', options: ['4', '8', '16', '32'], answer: '8' } }
+  { id: 70, type: 'trivia', category: 'recreational', title: 'Nerd Check', description: '¿Cuántos bits tiene un byte?', difficulty: 'Muy Fácil', points: 80, config: { question: '¿Cuántos bits tiene un byte?', options: ['4', '8', '16', '32'], answer: '8' } },
+  
+  // NEW CHALLENGING LEVELS (V3)
+  { 
+    id: 80, 
+    type: 'logic_gate', 
+    title: 'Puertas de Desvío', 
+    description: 'Resuelve la cadena lógica para abrir el puerto. (IN:1, IN:1 -> AND -> ?)', 
+    difficulty: 'Medio', 
+    points: 1000, 
+    config: { 
+      scenarios: [
+        { a: 1, b: 1, out: 1, answer: 'AND' },
+        { a: 0, b: 1, out: 1, answer: 'OR' },
+        { a: 1, b: 1, out: 0, answer: 'XOR' }
+      ] 
+    } 
+  },
+  { 
+    id: 81, 
+    type: 'matrix_rotate', 
+    title: 'Alineación de Sector', 
+    description: 'Rota los 4 núcleos de seguridad para que miren al CENTRO (90, 180, 270, 0 grados).', 
+    difficulty: 'Difícil', 
+    points: 1500, 
+    config: { targets: [90, 180, 270, 0] } 
+  },
+  { 
+    id: 82, 
+    type: 'boss', 
+    title: 'PROTOCOL_ULTRA_V3', 
+    description: 'FASE FINAL. Logística pura bajo presión extrema.', 
+    difficulty: 'DIOS', 
+    points: 10000, 
+    config: { 
+      subPuzzles: [
+        { type: 'logic_gate', scenarios: [{ a: 1, b: 0, out: 1, answer: 'OR' }] },
+        { type: 'matrix_rotate', targets: [0, 0, 0, 0] },
+        { type: 'wave', targetFreq: 7, targetAmp: 40 }
+      ] 
+    } 
+  },
+  // CUSTOM MAP MISSIONS (COUNTRIES)
+  { id: 101, type: 'london_clock', category: 'map', title: 'Reloj del Big Ben', description: 'Sincroniza la aguja exactamente a las 12:00.', difficulty: 'Medio', points: 500, config: { speed: 2 } },
+  { id: 102, type: 'cairo_pyramid', category: 'map', title: 'Cripta del Faraón', description: 'Completa la base de la pirámide de datos.', difficulty: 'Difícil', points: 600, config: {} },
+  { id: 103, type: 'berlin_enigma', category: 'map', title: 'Intercepción Enigma', description: 'Gira los rotores para que todos coincidan en la misma letra clave: "Z".', difficulty: 'Extremo', points: 800, config: { target: 'Z', rotors: ['A','M','Q'] } },
+  { id: 104, type: 'moscow_reactor', category: 'map', title: 'Frío del Kremlin', description: 'Mantén la temperatura del reactor bajo control.', difficulty: 'Medio', points: 700, config: {} },
+  { id: 105, type: 'tokyo_neon', category: 'map', title: 'Fallo en Akihabara', description: 'Repara los nodos defectuosos (eléctricos) en la placa.', difficulty: 'Difícil', points: 900, config: { items: ['🔌','🚄','🔌','🚄','⚡','🔌','⚡','🚄','🔌'] } },
+  { id: 106, type: 'ny_stocks', category: 'map', title: 'Red de Wall Street', description: 'Aísla instantáneamente la acción corporativa en caída.', difficulty: 'Fácil', points: 400, config: { values: [210, 150, 80, 205] } }
 ];
 
 export const ACHIEVEMENTS = [

@@ -1,165 +1,152 @@
 import { useState, useRef, useEffect } from 'react';
+import { Fingerprint, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const WelcomeScreen = ({ onEnter }) => {
-  const [leftX, setLeftX] = useState(-120);
-  const [dragging, setDragging] = useState(false);
-  const [joined, setJoined] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [accessGranted, setAccessGranted] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
-  const containerRef = useRef(null);
-  const startRef = useRef(0);
-  const initialXRef = useRef(-120);
-  const [particles] = useState(() => Array.from({ length: 30 }, () => ({
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    dur: `${3 + Math.random() * 4}s`,
-    delay: `${Math.random() * 3}s`
-  })));
+  const [nodesActive, setNodesActive] = useState(false);
+  const [nodeSequence, setNodeSequence] = useState([0, 1, 2, 3]);
+  const [userSequence, setUserSequence] = useState([]);
+  const [failed, setFailed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const timerRef = useRef(null);
 
-  // Auto float animation for the right piece
-  const [rightFloat, setRightFloat] = useState(0);
   useEffect(() => {
-    if (joined) return;
-    let frame;
-    let t = 0;
-    const animate = () => {
-      setRightFloat(Math.sin(t) * 8);
-      t += 0.03;
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [joined]);
+    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    // Shuffle nodes
+    setNodeSequence([...Array(4).keys()].sort(() => Math.random() - 0.5));
+  }, []);
 
-  const handlePointerDown = (e) => {
-    if (joined) return;
-    setDragging(true);
-    const rect = containerRef.current.getBoundingClientRect();
-    startRef.current = e.clientX - rect.left;
-    initialXRef.current = leftX;
-    e.target.setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e) => {
-    if (!dragging || joined) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const delta = currentX - startRef.current;
-    const newX = Math.max(-180, Math.min(20, initialXRef.current + delta));
-    setLeftX(newX);
-
-    // Snap and join when close enough
-    if (newX >= -10) {
-      setLeftX(0);
-      setJoined(true);
-      setDragging(false);
-
-      // Celebration sequence
-      setTimeout(() => setShowWelcome(true), 400);
-      setTimeout(() => onEnter(), 2800);
+  const handleNodeClick = (id) => {
+    if (nodesActive || accessGranted) return;
+    const nextVal = nodeSequence[userSequence.length];
+    if (id === nextVal) {
+      const newSeq = [...userSequence, id];
+      setUserSequence(newSeq);
+      if (newSeq.length === 4) {
+        setNodesActive(true);
+        setFailed(false);
+      }
+    } else {
+      setFailed(true);
+      setUserSequence([]);
+      setTimeout(() => setFailed(false), 500);
     }
   };
 
-  const handlePointerUp = () => {
-    setDragging(false);
+  const startScan = () => {
+    if (accessGranted) return;
+    setScanning(true);
+    timerRef.current = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timerRef.current);
+          handleSuccess();
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 30);
+  };
+
+  const stopScan = () => {
+    if (accessGranted) return;
+    setScanning(false);
+    clearInterval(timerRef.current);
+    setProgress(0);
+  };
+
+  const handleSuccess = () => {
+    setAccessGranted(true);
+    setTimeout(() => setShowWelcome(true), 500);
+    setTimeout(() => onEnter(), 3000);
   };
 
   return (
     <div className="fixed inset-0 bg-zinc-950 z-[9999] flex flex-col items-center justify-center overflow-hidden select-none touch-none">
-      {/* Background particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        {particles.map((p, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 bg-purple-500 rounded-full opacity-30"
-            style={{
-              left: p.left,
-              top: p.top,
-              animation: `float ${p.dur} ease-in-out ${p.delay} infinite`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Title */}
-      <div className={`text-center mb-16 transition-all duration-1000 ${showWelcome ? 'opacity-0 -translate-y-10' : 'opacity-100'}`}>
-        <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter mb-4" style={{ textShadow: '0 0 40px rgba(168,85,247,0.6), 0 0 80px rgba(168,85,247,0.2)' }}>
-          ENIGMA_NEXUS
-        </h1>
-        <p className="text-zinc-500 text-sm font-black uppercase tracking-[0.5em]">
-          Arrastra la pieza izquierda → para conectar
-        </p>
-      </div>
-
-      {/* Puzzle pieces container */}
-      <div
-        ref={containerRef}
-        className="relative max-w-[400px] w-full h-[200px] flex items-center justify-center"
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      >
-        {/* LEFT PIECE - Draggable */}
-        <div
-          onPointerDown={handlePointerDown}
-          className={`absolute cursor-grab active:cursor-grabbing transition-transform ${joined ? 'duration-500' : dragging ? 'duration-0' : 'duration-300'}`}
-          style={{
-            left: `calc(50% + ${leftX}px - 100px)`,
-            top: '50%',
-            transform: `translateY(-50%) ${joined ? 'scale(1.1)' : ''} scale(var(--puzzle-scale, 1))`,
-          }}
-        >
-          <svg className="w-[100px] h-[120px] md:w-[130px] md:h-[150px]" viewBox="0 0 130 150" fill="none">
-            <path
-              d="M 5 5 L 85 5 C 85 5 75 25 75 40 C 75 55 95 55 95 40 C 95 25 85 5 85 5 L 130 5 L 130 145 L 5 145 Z"
-              fill={joined ? 'url(#joinedGradLeft)' : 'url(#gradLeft)'}
-              stroke={joined ? '#a855f7' : '#6366f1'}
-              strokeWidth="2"
-              className="transition-all duration-500"
-              style={{ filter: joined ? 'drop-shadow(0 0 20px rgba(168,85,247,0.8))' : dragging ? 'drop-shadow(0 0 15px rgba(99,102,241,0.5))' : 'none' }}
-            />
-            <defs>
-              <linearGradient id="gradLeft" x1="0" y1="0" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(99,102,241,0.3)" />
-                <stop offset="100%" stopColor="rgba(99,102,241,0.1)" />
-              </linearGradient>
-              <linearGradient id="joinedGradLeft" x1="0" y1="0" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(168,85,247,0.5)" />
-                <stop offset="100%" stopColor="rgba(124,58,237,0.3)" />
-              </linearGradient>
-            </defs>
-            <text x="45" y="90" textAnchor="middle" fill="#a5b4fc" fontSize="16" fontWeight="900" fontFamily="monospace">E·N</text>
-          </svg>
+      {/* Biometric Scanner */}
+      <div className={`relative z-10 flex flex-col items-center gap-12 transition-all duration-1000 ${showWelcome ? 'opacity-0 scale-150' : 'opacity-100 scale-100'}`}>
+        <div className="text-center">
+          <h1 className="text-4xl sm:text-7xl font-black italic tracking-tighter mb-4 text-glow" style={{ color: '#a855f7' }}>
+            ENIGMA_NEXUS
+          </h1>
+          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em]">
+            Identity_Verification_Required
+          </p>
         </div>
 
-        {/* RIGHT PIECE - Static with float */}
-        <div
-          className="absolute transition-transform duration-500"
-          style={{
-            left: 'calc(50% + 5px)',
-            top: '50%',
-            transform: `translateY(calc(-50% + ${joined ? 0 : rightFloat}px)) ${joined ? 'scale(1.1)' : ''} scale(var(--puzzle-scale, 1))`,
-          }}
-        >
-          <svg className="w-[100px] h-[120px] md:w-[130px] md:h-[150px]" viewBox="0 0 130 150" fill="none">
-            <path
-              d="M 0 5 L 40 5 C 40 5 30 25 30 40 C 30 55 50 55 50 40 C 50 25 40 5 40 5 L 125 5 L 125 145 L 0 145 Z"
-              fill={joined ? 'url(#joinedGradRight)' : 'url(#gradRight)'}
-              stroke={joined ? '#a855f7' : '#7c3aed'}
-              strokeWidth="2"
-              className="transition-all duration-500"
-              style={{ filter: joined ? 'drop-shadow(0 0 20px rgba(168,85,247,0.8))' : 'none' }}
-            />
-            <defs>
-              <linearGradient id="gradRight" x1="0" y1="0" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(124,58,237,0.3)" />
-                <stop offset="100%" stopColor="rgba(124,58,237,0.1)" />
-              </linearGradient>
-              <linearGradient id="joinedGradRight" x1="0" y1="0" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgba(168,85,247,0.5)" />
-                <stop offset="100%" stopColor="rgba(99,102,241,0.3)" />
-              </linearGradient>
-            </defs>
-            <text x="75" y="90" textAnchor="middle" fill="#c4b5fd" fontSize="16" fontWeight="900" fontFamily="monospace">I·X</text>
-          </svg>
+        <div className="relative group">
+          {/* Security Nodes Ring */}
+          {!nodesActive && !accessGranted && (
+            <div className="absolute -inset-16 grid grid-cols-2 gap-32 pointer-events-none">
+              {[0, 1, 2, 3].map(i => (
+                <button
+                  key={i}
+                  onClick={() => handleNodeClick(i)}
+                  className={`w-12 h-12 rounded-lg border-2 pointer-events-auto transition-all duration-300 flex items-center justify-center font-black text-xs ${
+                    userSequence.includes(i) ? 'bg-emerald-500 border-emerald-400 text-black' : failed ? 'bg-red-500 border-red-400 animate-shake' : 'bg-white/5 border-white/20 text-zinc-600 hover:border-purple-500 hover:text-purple-400'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Scanner Circle */}
+          <div className={`w-48 h-48 md:w-64 md:h-64 rounded-full border-2 transition-all duration-500 flex items-center justify-center relative overflow-hidden ${
+            !nodesActive && !accessGranted ? 'border-red-500/20 grayscale opacity-40' : accessGranted ? 'border-emerald-500 bg-emerald-500/10' : scanning ? 'border-purple-500 bg-purple-500/5' : 'border-white/10 bg-white/5'
+          }`}>
+            
+            {/* Progress Ring (SVG) */}
+            <svg className="absolute inset-0 w-full h-full -rotate-90">
+              <circle
+                cx="50%" cy="50%" r="48%"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="1000"
+                strokeDashoffset={1000 - (progress * 10)}
+                className={`transition-all duration-100 ${accessGranted ? 'text-emerald-500' : 'text-purple-500'}`}
+              />
+            </svg>
+
+            {/* Laser Line */}
+            {scanning && !accessGranted && (
+              <motion.div 
+                initial={{ top: '0%' }}
+                animate={{ top: '100%' }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                className="absolute left-0 right-0 h-1 bg-purple-500 shadow-[0_0_20px_#a855f7] z-20"
+              />
+            )}
+
+            {/* Fingerprint Icon / Success Icon */}
+            <button
+              onPointerDown={() => nodesActive && startScan()}
+              onPointerUp={stopScan}
+              onPointerLeave={stopScan}
+              disabled={!nodesActive && !accessGranted}
+              className={`relative z-10 p-12 rounded-full transition-all duration-500 outline-none ${
+                !nodesActive && !accessGranted ? 'cursor-not-allowed text-zinc-800' : accessGranted ? 'text-emerald-500 scale-110' : scanning ? 'text-purple-500 scale-95' : 'text-zinc-700 hover:text-zinc-500'
+              }`}
+            >
+              {accessGranted ? <ShieldCheck className="w-20 h-20 md:w-32 md:h-32" /> : <Fingerprint className="w-20 h-20 md:w-32 md:h-32" />}
+            </button>
+
+            {/* Scanning Grid Overlay */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none cyber-grid" />
+          </div>
+
+          {/* Prompt Label */}
+          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-full text-center">
+             <p className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all ${scanning ? 'text-purple-400 animate-pulse' : 'text-zinc-600'}`}>
+                {accessGranted ? 'ACCESO_CONCEDIDO' : !nodesActive ? 'SINCRO_IDENTIDAD_REQUERIDA (1-4)' : scanning ? `ESCANEANDO_${progress}%` : isMobile ? 'MANTÉN_PULSADO_PARA_ESCANEAR' : 'MANTÉN_EL_CLICK_PARA_ESCANEAR'}
+             </p>
+          </div>
         </div>
       </div>
 

@@ -41,10 +41,10 @@ const EmojiPairsGame = ({ config, onSolve }) => {
   };
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-4 gap-2 md:gap-3">
       {cards.map((e, i) => (
         <button key={i} onClick={() => flip(i)}
-          className={`w-16 h-16 rounded-xl text-2xl flex items-center justify-center transition-all duration-300 border ${
+          className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-2xl flex items-center justify-center transition-all duration-300 border ${
             matched.includes(i) ? 'bg-emerald-500/20 border-emerald-500/50 scale-95' :
             flipped.includes(i) ? 'bg-purple-500/20 border-purple-500/50 scale-105' : 'bg-white/5 border-white/10 hover:bg-white/10'
           }`}>
@@ -79,10 +79,10 @@ const WhackMoleGame = ({ config, onSolve }) => {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="text-sm font-black text-zinc-500 uppercase tracking-widest">{hits}/{target} IMPACTOS</div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         {Array.from({length: 9}).map((_, i) => (
           <button key={i} onClick={() => whack(i)}
-            className={`w-20 h-20 rounded-2xl text-3xl flex items-center justify-center transition-all duration-150 border ${
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl text-2xl sm:text-3xl flex items-center justify-center transition-all duration-150 border ${
               i === active ? 'bg-red-500/30 border-red-500 scale-110 shadow-[0_0_20px_rgba(239,68,68,0.5)]' : 'bg-white/5 border-white/10'
             }`}>
             {i === active ? '👾' : ''}
@@ -100,9 +100,9 @@ const TypingRaceGame = ({ config, onSolve }) => {
 
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="flex gap-2">
+      <div className="flex gap-1 md:gap-2 flex-wrap justify-center">
         {word.split('').map((ch, i) => (
-          <div key={i} className={`w-12 h-14 rounded-lg border flex items-center justify-center font-mono text-2xl font-black transition-all ${
+          <div key={i} className={`w-10 h-10 sm:w-12 sm:h-14 rounded-lg border flex items-center justify-center font-mono text-lg sm:text-2xl font-black transition-all ${
             input[i] === ch ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' :
             input[i] && input[i] !== ch ? 'bg-red-500/20 border-red-500 text-red-400' :
             'bg-white/5 border-white/10 text-zinc-600'
@@ -201,10 +201,10 @@ const SpotDiffGame = ({ config, onSolve, onError }) => {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">ENCUENTRA AL INTRUSO</div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         {grid.map((e, i) => (
           <button key={i} onClick={() => i === pos ? onSolve() : onError()}
-            className="w-20 h-20 rounded-2xl text-3xl flex items-center justify-center bg-white/5 border border-white/10 hover:bg-purple-500/10 hover:border-purple-500/30 transition-all hover:scale-105">{e}</button>
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl text-2xl sm:text-3xl flex items-center justify-center bg-white/5 border border-white/10 hover:bg-purple-500/10 hover:border-purple-500/30 transition-all hover:scale-105">{e}</button>
         ))}
       </div>
     </div>
@@ -270,12 +270,12 @@ const WordScrambleGame = ({ config, onSolve }) => {
 /* 9. TRIVIA */
 const TriviaGame = ({ config, onSolve, onError }) => {
   return (
-    <div className="flex flex-col items-center gap-8 max-w-md">
-      <div className="text-xl font-black text-center leading-relaxed">{config.question}</div>
-      <div className="grid grid-cols-2 gap-3 w-full">
+    <div className="flex flex-col items-center gap-6 md:gap-8 max-w-full md:max-w-md">
+      <div className="text-lg md:text-xl font-black text-center leading-tight md:leading-relaxed px-2">{config.question}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 w-full px-4 sm:px-0">
         {config.options.map((opt, i) => (
           <button key={i} onClick={() => opt === config.answer ? onSolve() : onError()}
-            className="p-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm hover:bg-purple-500/10 hover:border-purple-500/30 transition-all">{opt}</button>
+            className="p-3 md:p-4 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl font-black text-xs md:text-sm hover:bg-purple-500/10 hover:border-purple-500/30 transition-all">{opt}</button>
         ))}
       </div>
     </div>
@@ -313,13 +313,13 @@ const DiceRollGame = ({ config, onSolve, onError }) => {
   return (
     <div className="flex flex-col items-center gap-8">
       <div className="text-sm font-black text-zinc-500 tracking-widest">OBJETIVO: SUMA = {target}</div>
-      <div className="flex gap-6">
+      <div className="flex gap-4 md:gap-6">
         {dice.map((d, i) => (
-          <div key={i} className={`text-6xl p-4 rounded-2xl border transition-all ${rolling ? 'animate-bounce border-purple-500' : 'border-white/20'}`}>{d > 0 ? faces[d-1] : '🎲'}</div>
+          <div key={i} className={`text-4xl sm:text-6xl p-3 sm:p-4 rounded-2xl border transition-all ${rolling ? 'animate-bounce border-purple-500' : 'border-white/20'}`}>{d > 0 ? faces[d-1] : '🎲'}</div>
         ))}
       </div>
-      <div className="text-2xl font-black text-purple-400">{dice[0]+dice[1] > 0 ? `= ${dice[0]+dice[1]}` : ''}</div>
-      <button onClick={roll} className="px-10 py-4 bg-purple-600/20 border border-purple-500/50 rounded-2xl font-black tracking-widest hover:bg-purple-600/40 transition-all active:scale-95">🎲 LANZAR</button>
+      <div className="text-xl sm:text-2xl font-black text-purple-400">{dice[0]+dice[1] > 0 ? `= ${dice[0]+dice[1]}` : ''}</div>
+      <button onClick={roll} className="px-8 sm:px-10 py-3 sm:py-4 bg-purple-600/20 border border-purple-500/50 rounded-2xl font-black tracking-widest hover:bg-purple-600/40 transition-all active:scale-95">🎲 LANZAR</button>
     </div>
   );
 };
@@ -416,17 +416,17 @@ const PatternRepeatGame = ({ config, onSolve, onError }) => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="text-sm font-black text-zinc-500 tracking-widest">{phase === 'showing' ? 'OBSERVA...' : phase === 'input' ? 'REPITE' : 'LISTO?'}</div>
+    <div className="flex flex-col items-center gap-4 md:gap-6">
+      <div className="text-[10px] sm:text-sm font-black text-zinc-500 tracking-widest uppercase">{phase === 'showing' ? 'OBSERVA...' : phase === 'input' ? 'REPITE' : 'LISTO?'}</div>
       <div className="grid grid-cols-3 gap-2">
         {Array.from({length: 9}).map((_, i) => (
           <button key={i} onClick={() => handleClick(i)} disabled={phase !== 'input'}
-            className={`w-16 h-16 rounded-xl transition-all duration-200 border ${
+            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl transition-all duration-200 border ${
               activeCell === i ? `${colors[i]} border-white scale-110 shadow-lg` : 'bg-white/5 border-white/10 hover:bg-white/10'
             }`} />
         ))}
       </div>
-      {phase === 'idle' && <button onClick={startGame} className="px-8 py-3 bg-purple-600/20 border border-purple-500/50 rounded-xl font-black text-sm tracking-widest hover:bg-purple-600/40 transition-all">COMENZAR</button>}
+      {phase === 'idle' && <button onClick={startGame} className="px-6 sm:px-8 py-2.5 sm:py-3 bg-purple-600/20 border border-purple-500/50 rounded-xl font-black text-[10px] sm:text-sm tracking-widest hover:bg-purple-600/40 transition-all uppercase">COMENZAR</button>}
     </div>
   );
 };
@@ -435,11 +435,11 @@ const PatternRepeatGame = ({ config, onSolve, onError }) => {
 const EmojiMathGame = ({ config, onSolve, onError }) => {
   return (
     <div className="flex flex-col items-center gap-6">
-      <div className="text-3xl font-black">{config.equation}</div>
-      <div className="flex gap-3">
+      <div className="text-2xl sm:text-3xl font-black">{config.equation}</div>
+      <div className="flex flex-wrap justify-center gap-2 md:gap-3">
         {config.options.map((opt, i) => (
           <button key={i} onClick={() => opt === config.answer ? onSolve() : onError()}
-            className="w-16 h-16 bg-white/5 border border-white/10 rounded-xl text-2xl font-black hover:bg-purple-500/10 hover:border-purple-500/30 transition-all">{opt}</button>
+            className="w-14 h-14 sm:w-16 sm:h-16 bg-white/5 border border-white/10 rounded-xl text-xl sm:text-2xl font-black hover:bg-purple-500/10 hover:border-purple-500/30 transition-all">{opt}</button>
         ))}
       </div>
     </div>
