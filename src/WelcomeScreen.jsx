@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Fingerprint, ShieldCheck } from 'lucide-react';
+import { Fingerprint, ShieldCheck, MousePointerClick } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WelcomeScreen = ({ onEnter }) => {
@@ -15,9 +15,9 @@ const WelcomeScreen = ({ onEnter }) => {
   const timerRef = useRef(null);
 
   useEffect(() => {
-    setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-    // Shuffle nodes
-    setNodeSequence([...Array(4).keys()].sort(() => Math.random() - 0.5));
+    setIsMobile(typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    // Fixed node sequence instead of randomized to prevent blind guessing
+    setNodeSequence([0, 1, 2, 3]);
   }, []);
 
   const handleNodeClick = (id) => {
@@ -129,12 +129,17 @@ const WelcomeScreen = ({ onEnter }) => {
               onPointerDown={() => nodesActive && startScan()}
               onPointerUp={stopScan}
               onPointerLeave={stopScan}
+              onMouseDown={() => nodesActive && startScan()}
+              onMouseUp={stopScan}
+              onMouseLeave={stopScan}
+              onTouchStart={() => nodesActive && startScan()}
+              onTouchEnd={stopScan}
               disabled={!nodesActive && !accessGranted}
               className={`relative z-10 p-12 rounded-full transition-all duration-500 outline-none ${
                 !nodesActive && !accessGranted ? 'cursor-not-allowed text-zinc-800' : accessGranted ? 'text-emerald-500 scale-110' : scanning ? 'text-purple-500 scale-95' : 'text-zinc-700 hover:text-zinc-500'
               }`}
             >
-              {accessGranted ? <ShieldCheck className="w-20 h-20 md:w-32 md:h-32" /> : <Fingerprint className="w-20 h-20 md:w-32 md:h-32" />}
+              {accessGranted ? <ShieldCheck className="w-20 h-20 md:w-32 md:h-32" /> : isMobile ? <Fingerprint className="w-20 h-20 md:w-32 md:h-32" /> : <MousePointerClick className="w-20 h-20 md:w-32 md:h-32" />}
             </button>
 
             {/* Scanning Grid Overlay */}
@@ -144,7 +149,7 @@ const WelcomeScreen = ({ onEnter }) => {
           {/* Prompt Label */}
           <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-full text-center">
              <p className={`text-[10px] font-black uppercase tracking-[0.3em] transition-all ${scanning ? 'text-purple-400 animate-pulse' : 'text-zinc-600'}`}>
-                {accessGranted ? 'ACCESO_CONCEDIDO' : !nodesActive ? 'SINCRO_IDENTIDAD_REQUERIDA (1-4)' : scanning ? `ESCANEANDO_${progress}%` : isMobile ? 'MANTÉN_PULSADO_PARA_ESCANEAR' : 'MANTÉN_EL_CLICK_PARA_ESCANEAR'}
+                {accessGranted ? 'ACCESO_CONCEDIDO' : !nodesActive ? 'SECUENCIA_SEGURIDAD_REQUERIDA_CLIC_NÚMEROS (1-4)' : scanning ? `VERIFICANDO_${progress}%` : isMobile ? 'MANTÉN_PULSADO_EL_ÍCONO_PARA_ENTRAR' : 'MANTÉN_EL_CLICK_PARA_ENTRAR'}
              </p>
           </div>
         </div>
