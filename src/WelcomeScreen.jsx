@@ -1,219 +1,255 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Puzzle, Shield, Zap, Sparkles } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
 
 const WelcomeScreen = ({ onEnter }) => {
+  const [dragX, setDragX] = useState(0);
   const [joined, setJoined] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    setIsMobile(typeof window !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
-  }, []);
+  const [showBienvenido, setShowBienvenido] = useState(false);
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const containerRef = useRef(null);
 
-  const handleDrag = (event, info) => {
-    // If the left piece (dragged) is close enough to the right piece
-    // The target is roughly at x: 0 (center)
-    if (info.point.x > window.innerWidth / 2 - 20 && info.point.x < window.innerWidth / 2 + 20) {
-      if (!joined) {
-        setJoined(true);
-        setTimeout(() => setShowWelcome(true), 600);
-        setTimeout(() => onEnter(), 3500);
-      }
+  // Returns how far we need to drag (in px) to trigger join
+  const SNAP_THRESHOLD = 90;
+
+  const onPointerDown = useCallback((e) => {
+    if (joined) return;
+    e.preventDefault();
+    dragging.current = true;
+    startX.current = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }, [joined]); // eslint-disable-line
+
+  const onPointerMove = useCallback((e) => {
+    if (!dragging.current) return;
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const delta = Math.max(0, clientX - startX.current); // only allow right drag
+    setDragX(Math.min(delta, SNAP_THRESHOLD + 20));
+  }, []); // eslint-disable-line
+
+  const onPointerUp = useCallback((e) => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+
+    const clientX = e.clientX ?? e.changedTouches?.[0]?.clientX ?? 0;
+    const delta = clientX - startX.current;
+
+    if (delta >= SNAP_THRESHOLD) {
+      setDragX(SNAP_THRESHOLD);
+      setJoined(true);
+      setTimeout(() => setShowBienvenido(true), 500);
+      setTimeout(() => onEnter(), 3200);
+    } else {
+      setDragX(0); // snap back
     }
-  };
+  }, [onEnter, onPointerMove]); // eslint-disable-line
+
+  const progress = Math.min(dragX / SNAP_THRESHOLD, 1);
 
   return (
-    <div className="fixed inset-0 bg-zinc-950 z-[9999] flex flex-col items-center justify-center overflow-hidden select-none touch-none font-sans">
-      {/* Background Decor */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full cyber-grid opacity-10" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed', inset: 0,
+        background: '#09090b',
+        zIndex: 9999,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+        userSelect: 'none',
+        fontFamily: '"Inter", "Segoe UI", sans-serif',
+      }}
+    >
+      {/* Grid background */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+        backgroundSize: '40px 40px',
+        pointerEvents: 'none',
+      }} />
 
-      <AnimatePresence>
-        {!showWelcome ? (
-          <motion.div 
-            exit={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-            className="relative flex flex-col items-center gap-24 z-10"
-          >
-            {/* Title Section */}
-            <div className="text-center space-y-4">
-              <motion.h1 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-5xl md:text-8xl font-black italic tracking-tighter text-glow"
-                style={{ color: '#a855f7' }}
-              >
-                ENIGMA_NEXUS
-              </motion.h1>
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-[0.5em]"
-              >
-                {joined ? 'SINCRONIZACIÓN_COMPLETA' : 'COMPLETA_EL_NÚCLEO_PARA_ACCEDER'}
-              </motion.p>
-            </div>
+      {/* Purple glow blobs */}
+      <div style={{ position: 'absolute', top: '20%', left: '20%', width: 400, height: 400, background: 'rgba(168,85,247,0.06)', borderRadius: '50%', filter: 'blur(80px)', animation: 'blobPulse 4s ease-in-out infinite' }} />
+      <div style={{ position: 'absolute', bottom: '20%', right: '20%', width: 400, height: 400, background: 'rgba(99,102,241,0.06)', borderRadius: '50%', filter: 'blur(80px)', animation: 'blobPulse 4s ease-in-out infinite', animationDelay: '2s' }} />
 
-            {/* Puzzle Interaction Area */}
-            <div className="relative w-full max-w-2xl h-64 flex items-center justify-center">
-              
-              {/* Connector Glow */}
-              <AnimatePresence>
-                {joined && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: 1.5 }}
-                    className="absolute z-0 w-48 h-48 bg-purple-500/20 blur-3xl rounded-full"
-                  />
-                )}
-              </AnimatePresence>
+      {!showBienvenido ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 60, position: 'relative', zIndex: 10 }}>
+          
+          {/* Title */}
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{
+              fontSize: 'clamp(40px, 8vw, 80px)',
+              fontWeight: 900, fontStyle: 'italic',
+              letterSpacing: '-0.04em',
+              color: '#a855f7',
+              textShadow: '0 0 40px rgba(168,85,247,0.4)',
+              margin: 0,
+            }}>ENIGMA_NEXUS</h1>
+            <p style={{
+              color: '#52525b', fontSize: 10, fontWeight: 800,
+              letterSpacing: '0.4em', textTransform: 'uppercase',
+              margin: '10px 0 0 0',
+            }}>
+              {joined ? 'NÚCLEO_SINCRONIZADO' : 'UNE_LAS_PIEZAS_PARA_ACCEDER'}
+            </p>
+          </div>
 
-              {/* Left Piece (Draggable) */}
-              <motion.div 
-                className={`relative z-20 cursor-grab active:cursor-grabbing ${joined ? 'pointer-events-none' : ''}`}
-                drag={!joined ? "x" : false}
-                dragConstraints={{ left: -300, right: 100 }}
-                dragElastic={0.1}
-                onDrag={handleDrag}
-                initial={{ x: -150 }}
-                animate={{ x: joined ? -1 : undefined }}
-                transition={joined ? { type: "spring", stiffness: 300, damping: 20 } : undefined}
-              >
-                <div className={`relative p-8 rounded-3xl transition-all duration-500 ${joined ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_0_40px_rgba(168,85,247,0.4)]' : 'bg-white/5 border border-white/10 backdrop-blur-md'}`}>
-                   <Puzzle className={`w-16 h-16 md:w-24 md:h-24 ${joined ? 'text-white' : 'text-purple-500/50'}`} />
-                   {!joined && (
-                     <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-950 rounded-full border border-white/10" />
-                   )}
-                </div>
-                {!joined && (
-                  <motion.div 
-                    animate={{ x: [0, 10, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="absolute -bottom-12 left-1/2 -translate-x-1/2 whitespace-nowrap"
-                  >
-                    <span className="text-[10px] font-bold text-zinc-600 italic">ARRASTRA_PARA_UNIR &rarr;</span>
-                  </motion.div>
-                )}
-              </motion.div>
+          {/* Puzzle Pieces */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, position: 'relative', height: 160 }}>
 
-              {/* Right Piece (Static/Target) */}
-              <motion.div 
-                className="relative z-10"
-                initial={{ x: 150 }}
-                animate={{ x: joined ? 1 : 150 }}
-                transition={joined ? { type: "spring", stiffness: 300, damping: 20 } : undefined}
-              >
-                <div className={`relative p-8 rounded-3xl transition-all duration-500 ${joined ? 'bg-gradient-to-l from-purple-600 to-indigo-600 shadow-[0_0_40px_rgba(168,85,247,0.4)]' : 'bg-white/5 border border-white/10 backdrop-blur-md'}`}>
-                   <Puzzle className={`w-16 h-16 md:w-24 md:h-24 mirror-x ${joined ? 'text-white' : 'text-indigo-500/50'}`} />
-                   {!joined && (
-                     <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-zinc-950 rounded-full border border-white/10 border-r-transparent" />
-                   )}
-                </div>
-              </motion.div>
-
-              {/* Connection Sparks */}
-              {joined && (
-                <div className="absolute inset-0 pointer-events-none">
-                  {[...Array(12)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scale: 0, x: 0, y: 0 }}
-                      animate={{ 
-                        scale: [0, 1, 0],
-                        x: (Math.random() - 0.5) * 400,
-                        y: (Math.random() - 0.5) * 400
-                      }}
-                      transition={{ duration: 1.5, ease: "easeOut" }}
-                      className="absolute left-1/2 top-1/2 w-1 h-1 bg-purple-400 rounded-full"
-                    />
-                  ))}
+            {/* LEFT PIECE (draggable) */}
+            <div
+              onPointerDown={onPointerDown}
+              style={{
+                position: 'relative',
+                transform: `translateX(${dragX}px)`,
+                transition: dragging.current ? 'none' : 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                cursor: joined ? 'default' : 'grab',
+                zIndex: 2,
+              }}
+            >
+              <PuzzlePieceLeft color={joined ? '#a855f7' : '#27272a'} glowing={joined} progress={progress} />
+              {!joined && (
+                <div style={{
+                  position: 'absolute', bottom: -36, left: '50%',
+                  transform: 'translateX(-50%)', whiteSpace: 'nowrap',
+                  fontSize: 9, color: '#52525b', fontWeight: 700,
+                  letterSpacing: '0.2em', textTransform: 'uppercase',
+                  animation: 'arrowBounce 1.5s ease-in-out infinite',
+                }}>
+                  ← ARRASTRA →
                 </div>
               )}
             </div>
 
-            {/* Bottom Hints */}
-            <div className="mt-12">
-               <Shield className={`w-6 h-6 mx-auto mb-2 transition-colors ${joined ? 'text-emerald-500' : 'text-zinc-800'}`} />
-               <p className="text-[8px] text-zinc-700 font-mono tracking-widest text-center">
-                 SECURE_CONNECTION_ESTABLISHED: {joined ? 'TRUE' : 'FALSE'}
-               </p>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center p-12 text-center"
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute w-96 h-96 border border-purple-500/20 rounded-full"
-            />
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-              className="absolute w-[450px] h-[450px] border border-indigo-500/10 rounded-full"
-            />
-            
-            <div className="relative">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: '100%' }}
-                className="absolute -bottom-2 left-0 h-1 bg-gradient-to-r from-purple-500 to-indigo-500"
-              />
-              <h1 className="text-6xl md:text-9xl font-black italic tracking-tighter text-white mb-4 animate-pulse">
-                BIENVENIDO
-              </h1>
-            </div>
-            
-            <div className="flex items-center gap-4 mt-8">
-              <Zap className="w-5 h-5 text-purple-400 animate-bounce" />
-              <p className="text-zinc-500 text-sm font-black uppercase tracking-[0.6em]">
-                Accediendo al Nexo...
-              </p>
-              <Zap className="w-5 h-5 text-indigo-400 animate-bounce" style={{ animationDelay: '0.2s' }} />
+            {/* RIGHT PIECE (static target) */}
+            <div style={{
+              position: 'relative',
+              transform: `translateX(${joined ? -dragX + dragX : 0}px)`, // stays locked
+              zIndex: 1,
+            }}>
+              <PuzzlePieceRight color={joined ? '#6366f1' : '#27272a'} glowing={joined} progress={progress} />
             </div>
 
-            <div className="mt-12 p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-6">
-               <div className="flex flex-col items-start">
-                  <span className="text-[8px] text-zinc-600 font-black uppercase">Usuario</span>
-                  <span className="text-[10px] text-zinc-300 font-bold tracking-widest">GUEST_AUTH_OK</span>
-               </div>
-               <div className="w-[1px] h-8 bg-white/10" />
-               <div className="flex flex-col items-start text-emerald-500">
-                  <span className="text-[8px] font-black uppercase opacity-60">Status</span>
-                  <span className="text-[10px] font-bold tracking-widest">READY</span>
-               </div>
+            {/* Connection flash */}
+            {joined && (
+              <div style={{
+                position: 'absolute', inset: -20,
+                background: 'radial-gradient(ellipse, rgba(168,85,247,0.3) 0%, transparent 70%)',
+                borderRadius: 40,
+                animation: 'joinFlash 0.8s ease-out forwards',
+                pointerEvents: 'none',
+              }} />
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {!joined && (
+            <div style={{ width: 200, height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 99,
+                width: `${progress * 100}%`,
+                background: 'linear-gradient(90deg, #a855f7, #6366f1)',
+                transition: dragging.current ? 'none' : 'width 0.3s ease',
+                boxShadow: progress > 0 ? '0 0 10px rgba(168,85,247,0.5)' : 'none',
+              }} />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+
+          {/* Status line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: joined ? '#10b981' : '#27272a', boxShadow: joined ? '0 0 10px #10b981' : 'none', transition: 'all 0.5s' }} />
+            <span style={{ fontSize: 9, color: '#3f3f46', fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase' }}>
+              SECURE_CONN: {joined ? 'ESTABLISHED' : 'PENDING'}
+            </span>
+          </div>
+        </div>
+      ) : (
+        /* Bienvenido screen */
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 24, position: 'relative', zIndex: 10,
+          animation: 'fadeIn 0.6s cubic-bezier(0.16,1,0.3,1) both',
+        }}>
+          {/* Rings */}
+          <div style={{ position: 'absolute', width: 500, height: 500, border: '1px solid rgba(168,85,247,0.1)', borderRadius: '50%', animation: 'spin 20s linear infinite' }} />
+          <div style={{ position: 'absolute', width: 380, height: 380, border: '1px solid rgba(99,102,241,0.15)', borderRadius: '50%', animation: 'spin 14s linear infinite reverse' }} />
+
+          <h1 style={{
+            fontSize: 'clamp(60px, 12vw, 120px)',
+            fontWeight: 900, fontStyle: 'italic',
+            letterSpacing: '-0.04em',
+            background: 'linear-gradient(135deg, #a855f7, #6366f1, #ec4899)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            margin: 0, position: 'relative',
+          }}>BIENVENIDO</h1>
+
+          <p style={{ color: '#52525b', fontSize: 11, fontWeight: 700, letterSpacing: '0.5em', textTransform: 'uppercase', animation: 'pulse 2s ease-in-out infinite' }}>
+            Cargando Nexus...
+          </p>
+
+          <div style={{
+            padding: '12px 24px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: 16,
+            display: 'flex', alignItems: 'center', gap: 16,
+          }}>
+            <span style={{ fontSize: 9, color: '#10b981', fontWeight: 700, letterSpacing: '0.3em' }}>AUTH_OK</span>
+            <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.08)' }} />
+            <span style={{ fontSize: 9, color: '#52525b', fontWeight: 700, letterSpacing: '0.3em' }}>GUEST_USER</span>
+          </div>
+        </div>
+      )}
 
       <style>{`
-        .mirror-x {
-          transform: scaleX(-1);
-        }
-        .text-glow {
-          text-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
-        }
-        .cyber-grid {
-          background-image: 
-            linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-          background-size: 40px 40px;
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.1; transform: scale(1); }
-          50% { opacity: 0.15; transform: scale(1.1); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        @keyframes blobPulse { 0%,100%{opacity:0.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+        @keyframes arrowBounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-4px)} }
+        @keyframes joinFlash { 0%{opacity:1} 100%{opacity:0} }
+        @keyframes fadeIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
       `}</style>
     </div>
   );
 };
+
+// SVG Puzzle Piece - Left (tab on right side)
+const PuzzlePieceLeft = ({ color, glowing, progress }) => (
+  <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M10 10 L75 10 Q75 30 95 30 Q115 30 115 50 Q115 70 95 70 Q75 70 75 90 L75 120 L10 120 Z"
+      fill={color}
+      stroke={glowing ? '#a855f7' : 'rgba(255,255,255,0.08)'}
+      strokeWidth={glowing ? 2 : 1.5}
+      style={{
+        filter: glowing ? 'drop-shadow(0 0 12px rgba(168,85,247,0.6))' : progress > 0 ? `drop-shadow(0 0 ${progress * 8}px rgba(168,85,247,${progress * 0.4}))` : 'none',
+        transition: 'filter 0.3s',
+      }}
+    />
+    {/* Icon inside */}
+    <text x="38" y="72" fontSize="32" fill={glowing ? 'white' : '#52525b'} fontWeight="900" style={{ transition: 'fill 0.3s' }}>🧩</text>
+  </svg>
+);
+
+// SVG Puzzle Piece - Right (notch on left side, matching tab)
+const PuzzlePieceRight = ({ color, glowing, progress }) => (
+  <svg width="130" height="130" viewBox="0 0 130 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M55 10 L120 10 L120 120 L55 120 L55 90 Q55 70 35 70 Q15 70 15 50 Q15 30 35 30 Q55 30 55 10 Z"
+      fill={color}
+      stroke={glowing ? '#6366f1' : 'rgba(255,255,255,0.08)'}
+      strokeWidth={glowing ? 2 : 1.5}
+      style={{
+        filter: glowing ? 'drop-shadow(0 0 12px rgba(99,102,241,0.6))' : progress > 0 ? `drop-shadow(0 0 ${progress * 8}px rgba(99,102,241,${progress * 0.4}))` : 'none',
+        transition: 'filter 0.3s',
+      }}
+    />
+    <text x="68" y="72" fontSize="32" fill={glowing ? 'white' : '#52525b'} fontWeight="900" style={{ transition: 'fill 0.3s' }}>⚡</text>
+  </svg>
+);
 
 export default WelcomeScreen;
